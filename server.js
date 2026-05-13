@@ -21,7 +21,6 @@ app.post("/parse-ofx", upload.single("file"), async (req, res) => {
 
     try {
 
-        // Verifica se recebeu arquivo
         if (!req.file) {
 
             return res.status(400).json({
@@ -31,47 +30,59 @@ app.post("/parse-ofx", upload.single("file"), async (req, res) => {
 
         }
 
-        console.log("Arquivo recebido:");
-        console.log(req.file);
-
-        // Lê arquivo
         const conteudo = fs.readFileSync(req.file.path);
 
-        // Converte encoding
         const textoOFX = iconv.decode(conteudo, "latin1");
 
-        // Faz parse do OFX
         const resultado = await ofx.parse(textoOFX);
 
-        // Exibe estrutura completa no Render Logs
-        console.log("====================================");
-        console.log("ESTRUTURA OFX:");
-        console.log(JSON.stringify(resultado, null, 2));
-        console.log("====================================");
+        const transacoesOriginais =
+            resultado?.OFX?.BANKMSGSRSV1?.STMTTRNRS?.STMTRS?.BANKTRANLIST?.STMTTRN || [];
 
-        // Retorna estrutura completa para o Bubble
-        return res.json(resultado);
+        const transacoes = transacoesOriginais.map((t) => ({
+
+            tipo: t.TRNTYPE || null,
+
+            data: t.DTPOSTED || null,
+
+            valor: Number(t.TRNAMT || 0),
+
+            id: t.FITID || "",
+
+            descricao: t.MEMO || "",
+
+            documento: t.CHECKNUM || ""
+
+        }));
+
+        return res.json({
+
+            sucesso: true,
+
+            total: transacoes.length,
+
+            transacoes
+
+        });
 
     } catch (erro) {
 
-        console.error("ERRO NO PARSER:");
         console.error(erro);
 
         return res.status(500).json({
+
             sucesso: false,
+
             erro: erro.message
+
         });
 
     }
 
 });
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-
-    console.log("====================================");
     console.log(`Servidor rodando na porta ${PORT}`);
-    console.log("====================================");
-
 });
