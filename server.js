@@ -12,6 +12,17 @@ app.use(cors());
 const upload = multer({
     dest: "uploads/"
 });
+function formatarData(ofxDate) {
+
+    if (!ofxDate) return null;
+
+    const ano = ofxDate.substring(0, 4);
+    const mes = ofxDate.substring(4, 6);
+    const dia = ofxDate.substring(6, 8);
+
+    return `${ano}-${mes}-${dia}`;
+
+}
 
 app.get("/", (req, res) => {
     res.send("OFX Parser Online");
@@ -43,9 +54,19 @@ app.post("/parse-ofx", upload.single("file"), async (req, res) => {
 
             tipo: t.TRNTYPE || null,
 
-            data: t.DTPOSTED || null,
+            data: formatarData(t.DTPOSTED),
 
-            valor: Number(t.TRNAMT || 0),
+            valor: isNaN(Number(
+    String(t.TRNAMT || "0")
+        .replace(",", ".")
+        .trim()
+))
+? 0
+: Number(
+    String(t.TRNAMT || "0")
+        .replace(",", ".")
+        .trim()
+),
 
             id: t.FITID || "",
 
