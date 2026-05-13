@@ -39,8 +39,9 @@ app.post("/parse-ofx", upload.single("file"), async (req, res) => {
 
     const ofxData = ofx.parse(conteudo);
 
-    const transacoesOriginais =
-      ofxData?.OFX?.BANKMSGSRSV1?.STMTTRNRS?.STMTRS?.BANKTRANLIST?.STMTTRN || [];
+    console.log(JSON.stringify(resultado, null, 2));
+
+res.json(resultado);
 
     const transacoes = transacoesOriginais.map((t) => ({
       tipo: t.TRNTYPE || null,
